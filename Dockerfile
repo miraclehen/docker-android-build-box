@@ -172,6 +172,7 @@ RUN echo "sdk tools ${ANDROID_SDK_TOOLS_VERSION}" && \
     echo "ANDROID_SDK_TOOLS_VERSION=${ANDROID_SDK_TOOLS_VERSION}" >> ${INSTALLED_VERSIONS}
 
 FROM base-base as base-latest
+ARG INSTALLED_VERSIONS
 RUN TEMP=$(curl -S https://developer.android.com/studio/index.html) && \
     ANDROID_SDK_TOOLS_VERSION=$(echo "$TEMP" | grep commandlinetools-linux | tail -n 1 | cut -d \- -f 3 | tr -d _latest.zip\</em\>\<\/p\>) && \
     echo "sdk tools $ANDROID_SDK_TOOLS_VERSION" && \
