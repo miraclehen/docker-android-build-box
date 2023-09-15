@@ -236,6 +236,7 @@ RUN . ~/.bash_profile && \
 #----------~~~~~~~~~~*****
 # Create some jenkins required directory to allow this image run with Jenkins
 FROM ubuntu as stage2
+ARG DIRWORK
 WORKDIR ${DIRWORK}
 RUN mkdir -p /var/lib/jenkins/workspace && \
     mkdir -p /home/jenkins && \
@@ -272,6 +273,7 @@ RUN echo "platform tools" && \
 #
 # https://developer.android.com/studio/command-line/sdkmanager.html
 FROM pre-minimal as stage1-independent-base
+ARG DIRWORK
 WORKDIR ${DIRWORK}
 ARG PACKAGES_FILENAME="android-sdks.txt"
 
@@ -316,6 +318,7 @@ RUN echo "installing: $(cat $PACKAGES_FILENAME)" && \
 #----------~~~~~~~~~~*****
 # bundletool
 FROM pre-minimal as bundletool-base
+ARG DIRWORK
 WORKDIR ${DIRWORK}
 RUN echo "bundletool"
 
@@ -337,6 +340,7 @@ RUN echo "bundletool finished"
 #----------~~~~~~~~~~*****
 # NDK (side-by-side)
 FROM pre-minimal as ndk-base
+ARG DIRWORK
 WORKDIR ${DIRWORK}
 RUN echo "NDK"
 
@@ -362,6 +366,7 @@ RUN echo "NDK finished"
 #----------~~~~~~~~~~*****
 # Flutter
 FROM --platform=linux/amd64 base as flutter-base
+ARG DIRWORK
 WORKDIR ${DIRWORK}
 FROM flutter-base as flutter-tagged
 RUN git clone --depth 1 --branch ${FLUTTER_VERSION} https://github.com/flutter/flutter.git ${FLUTTER_HOME} && \
