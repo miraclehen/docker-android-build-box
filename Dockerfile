@@ -300,6 +300,8 @@ ARG LAST8_PACKAGES=$PACKAGES_FILENAME
 # for each (while) platform number find any extensions
 # for each (while) platform number get all the build-tools
 # lastly get any potential build-tools for next platform release
+ARG SDK_PACKAGES_LIST
+ARG PLATFORM_NUMBERS
 RUN cat ${SDK_PACKAGES_LIST} | grep "platforms;android-[[:digit:]][[:digit:]]\+ " | tail -n8 | awk '{print $1}' \
     >> $LAST8_PACKAGES && \
     PLATFORM_NUMBERS=$(cat $LAST8_PACKAGES | grep -o '[0-9][0-9]\+' | sort -u) && \
