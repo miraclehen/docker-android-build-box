@@ -293,6 +293,7 @@ RUN echo "emulator" && \
 # Warning: Failed to find package emulator
 
 FROM stage1-base as stage1-tagged
+ARG PACKAGES_FILENAME
 COPY tagged_sdk_packages_list.txt $PACKAGES_FILENAME
 
 FROM stage1-base as stage1-last8
@@ -305,9 +306,6 @@ ARG LAST8_PACKAGES=$PACKAGES_FILENAME
 # lastly get any potential build-tools for next platform release
 ARG SDK_PACKAGES_LIST
 ARG PLATFORM_NUMBERS
-RUN echo SDK_PACKAGES_LIST===${SDK_PACKAGES_LIST} 
-RUN echo PLATFORM_NUMBERS===${PLATFORM_NUMBERS} 
-RUN echo LAST8_PACKAGES===${LAST8_PACKAGES} 
 RUN cat ${SDK_PACKAGES_LIST} | grep "platforms;android-[[:digit:]][[:digit:]]\+ " | tail -n8 | awk '{print $1}' \
     >> $LAST8_PACKAGES && \
     PLATFORM_NUMBERS=$(cat $LAST8_PACKAGES | grep -o '[0-9][0-9]\+' | sort -u) && \
@@ -321,6 +319,7 @@ RUN cat ${SDK_PACKAGES_LIST} | grep "platforms;android-[[:digit:]][[:digit:]]\+ 
     cat ${SDK_PACKAGES_LIST} | grep "build-tools;$i" | awk '{print $1}' >> $LAST8_PACKAGES
 
 FROM stage1-${ANDROID_SDKS} as stage1-final
+ARG PACKAGES_FILENAME
 RUN echo "installing: $(cat $PACKAGES_FILENAME)" && \
     . /etc/jdk.env && \
     yes | ${ANDROID_SDK_MANAGER} ${DEBUG:+--verbose} --package_file=$PACKAGES_FILENAME > /dev/null
@@ -342,6 +341,8 @@ RUN wget -q https://github.com/google/bundletool/releases/download/${BUNDLETOOL_
 
 FROM bundletool-base as bundletool-latest
 ARG INSTALLED_TEMP
+ARG NODE_VERSION
+ARG BUNDLETOOL_VERSION
 RUN TEMP=$(curl -s https://api.github.com/repos/google/bundletool/releases/latest) && \
     echo "$TEMP" | grep "browser_download_url.*jar" | cut -d : -f 2,3 | tr -d \" | wget -O $ANDROID_SDK_HOME/cmdline-tools/latest/bundletool.jar -qi - && \
     TAG_NAME=$(echo "$TEMP" | grep "tag_name" | cut -d : -f 2,3 | tr -d \"\ ,) && \
@@ -360,12 +361,15 @@ WORKDIR ${DIRWORK}
 RUN echo "NDK"
 
 FROM ndk-base as ndk-tagged
+ARG NDK_VERSION
 RUN echo "Installing ${NDK_VERSION}" && \
     . /etc/jdk.env && \
     yes | $ANDROID_SDK_MANAGER ${DEBUG:+--verbose} "ndk;${NDK_VERSION}" > /dev/null && \
     ln -sv $ANDROID_HOME/ndk/${NDK_VERSION} ${ANDROID_NDK}
 
 FROM ndk-base as ndk-latest
+ARG NDK_VERSION
+ARG SDK_PACKAGES_LIST
 RUN NDK=$(grep 'ndk;' ${SDK_PACKAGES_LIST} | sort | tail -n1 | awk '{print $1}') && \
     NDK_VERSION=$(echo $NDK | awk -F\; '{print $2}') && \
     echo "Installing $NDK" && \
@@ -384,10 +388,13 @@ FROM --platform=linux/amd64 base as flutter-base
 ARG DIRWORK
 WORKDIR ${DIRWORK}
 FROM flutter-base as flutter-tagged
+ARG FLUTTER_VERSION
+ARG INSTALLED_TEMP
 RUN git clone --depth 1 --branch ${FLUTTER_VERSION} https://github.com/flutter/flutter.git ${FLUTTER_HOME} && \
     echo "FLUTTER_VERSION=${FLUTTER_VERSION}" >> ${INSTALLED_TEMP}
 
 FROM flutter-base as flutter-latest
+ARG INSTALLED_TEMP
 RUN git clone --depth 5 -b stable https://github.com/flutter/flutter.git ${FLUTTER_HOME} && \
     cd ${FLUTTER_HOME} && echo "FLUTTER_VERSION="$(git describe --tags HEAD) >> ${INSTALLED_TEMP}
 
@@ -399,6 +406,7 @@ RUN flutter config --no-analytics
 #----------~~~~~~~~~~*****
 # ruby gems
 FROM pre-minimal as stage3
+ARG INSTALLED_TEMP
 WORKDIR ${DIRWORK}
 COPY Gemfile /Gemfile
 
@@ -427,12 +435,15 @@ RUN echo "nodejs, npm, cordova, ionic, react-native" && \
 
 # Install Node
 FROM node-base as node-tagged
+ARG NODE_VERSION
 RUN curl -sL -k https://deb.nodesource.com/setup_${NODE_VERSION} | bash - > /dev/null
 
 FROM node-base as node-latest
 RUN curl -sL -k https://deb.nodesource.com/setup_lts.x | bash - > /dev/null
 
 FROM node-${NODE_TAGGED} as node-final
+ARG NODE_VERSION
+ARG INSTALLED_TEMP
 RUN apt-get install -qq nodejs > /dev/null && \
     echo "node version: `node -v`" && \
     curl -sS -k https://dl.yarnpkg.com/debian/pubkey.gpg \
@@ -477,6 +488,7 @@ RUN apt-get install -qq nodejs > /dev/null && \
 #----------~~~~~~~~~~*****
 # intended as a functional bare-bones installation
 FROM pre-minimal as minimal
+ARG INSTALLED_TEMP
 COPY --from=stage2 /var/lib/jenkins/workspace /var/lib/jenkins/workspace
 COPY --from=stage2 /home/jenkins /home/jenkins
 COPY --from=jenv-final ${JENV_ROOT} ${JENV_ROOT}
@@ -497,6 +509,7 @@ WORKDIR ${FINAL_DIRWORK}
 # build target: complete
 #----------~~~~~~~~~~*****
 FROM node-final as complete
+ARG INSTALLED_TEMP
 COPY --from=stage1-final --chmod=775 ${ANDROID_HOME} ${ANDROID_HOME}
 COPY --from=stage2 /var/lib/jenkins/workspace /var/lib/jenkins/workspace
 COPY --from=stage2 /home/jenkins /home/jenkins
@@ -528,6 +541,7 @@ WORKDIR ${FINAL_DIRWORK}
 # build target: complete-flutter
 #----------~~~~~~~~~~*****
 FROM --platform=linux/amd64 complete as complete-flutter
+ARG INSTALLED_TEMP
 COPY --from=flutter-final ${FLUTTER_HOME} ${FLUTTER_HOME}
 COPY --from=flutter-final /root/.flutter /root/.flutter
 COPY --from=flutter-final /root/.config/flutter /root/.config/flutter
