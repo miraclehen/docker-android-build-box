@@ -156,6 +156,7 @@ RUN apt-get update -qq > /dev/null && \
 # Install Android SDK CLI
 FROM pre-base as base-base
 ARG INSTALLED_VERSIONS
+RUN echo INSTALLED_VERSIONS ===== ${INSTALLED_VERSIONS}
 
 RUN echo '# Installed Versions of Specified Software' >> ${INSTALLED_VERSIONS}
 
