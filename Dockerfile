@@ -31,7 +31,7 @@ ARG DIRWORK="/tmp"
 ARG FINAL_DIRWORK="/project"
 
 ARG INSTALLED_VERSIONS="/root/installed-versions.txt"
-
+ARG INSTALLED_TEMP="${DIRWORK}/.temp_version"
 
 
 #----------~~~~~~~~~~**********~~~~~~~~~~~-----------#
@@ -52,7 +52,7 @@ ARG BUNDLETOOL_VERSION
 ARG FLUTTER_VERSION
 ARG JENV_RELEASE
 
-ARG INSTALLED_TEMP="${DIRWORK}/.temp_version"
+ARG INSTALLED_TEMP
 ARG INSTALLED_VERSIONS
 
 ARG SDK_PACKAGES_LIST="${DIRWORK}/packages.txt"
