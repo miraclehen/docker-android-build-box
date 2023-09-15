@@ -27,6 +27,9 @@ ARG FLUTTER_VERSION="3.7.7"
 ARG JENV_TAGGED="latest"
 ARG JENV_RELEASE="0.5.6"
 
+ARG DIRWORK="/tmp"
+ARG FINAL_DIRWORK="/project"
+
 #----------~~~~~~~~~~**********~~~~~~~~~~~-----------#
 #                PRELIMINARY STAGES
 #----------~~~~~~~~~~**********~~~~~~~~~~~-----------#
@@ -44,9 +47,6 @@ ARG NODE_VERSION
 ARG BUNDLETOOL_VERSION
 ARG FLUTTER_VERSION
 ARG JENV_RELEASE
-
-ARG DIRWORK="/tmp"
-ARG FINAL_DIRWORK="/project"
 
 ARG INSTALLED_TEMP="${DIRWORK}/.temp_version"
 ARG INSTALLED_VERSIONS="/root/installed-versions.txt"
