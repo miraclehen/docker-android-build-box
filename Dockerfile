@@ -165,6 +165,7 @@ RUN echo '# Installed Versions of Specified Software' >> ${INSTALLED_VERSIONS}
 FROM base-base as base-tagged
 
 ARG ANDROID_SDK_TOOLS_VERSION
+ARG INSTALLED_VERSIONS
 
 RUN echo "sdk tools ${ANDROID_SDK_TOOLS_VERSION}" && \
     wget --quiet --output-document=sdk-tools.zip \
