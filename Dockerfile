@@ -286,7 +286,7 @@ RUN echo "emulator" && \
     . /etc/jdk.env && \
     yes | $ANDROID_SDK_MANAGER "emulator" > /dev/null
 
-FROM --platform=linux/arm64 stage1-independent-base as stage1-base
+# FROM --platform=linux/arm64 stage1-independent-base as stage1-base
 # seems there is no emulator on arm64
 # Warning: Failed to find package emulator
 
