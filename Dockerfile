@@ -335,10 +335,13 @@ WORKDIR ${DIRWORK}
 RUN echo "bundletool"
 
 FROM bundletool-base as bundletool-tagged
+ARG BUNDLETOOL_VERSION
+ARG INSTALLED_TEMP
 RUN wget -q https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar -O $ANDROID_SDK_HOME/cmdline-tools/latest/bundletool.jar && \
     echo "BUNDLETOOL_VERSION=${BUNDLETOOL_VERSION}" >> ${INSTALLED_TEMP}
 
 FROM bundletool-base as bundletool-latest
+ARG INSTALLED_TEMP
 RUN TEMP=$(curl -s https://api.github.com/repos/google/bundletool/releases/latest) && \
     echo "$TEMP" | grep "browser_download_url.*jar" | cut -d : -f 2,3 | tr -d \" | wget -O $ANDROID_SDK_HOME/cmdline-tools/latest/bundletool.jar -qi - && \
     TAG_NAME=$(echo "$TEMP" | grep "tag_name" | cut -d : -f 2,3 | tr -d \"\ ,) && \
