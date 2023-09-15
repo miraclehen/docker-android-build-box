@@ -215,6 +215,7 @@ RUN git clone --depth 1 --branch ${JENV_RELEASE} https://github.com/jenv/jenv.gi
     echo "JENV_RELEASE=${JENV_RELEASE}" >> ${INSTALLED_TEMP}
 
 FROM jenv-base as jenv-latest
+ARG INSTALLED_TEMP
 RUN git clone  https://github.com/jenv/jenv.git ${JENV_ROOT} && \
     cd ${JENV_ROOT} && echo "JENV_RELEASE=$(git describe --tags HEAD)" >> ${INSTALLED_TEMP}
 
