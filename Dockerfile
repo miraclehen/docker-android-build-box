@@ -211,6 +211,7 @@ RUN echo '#!/usr/bin/env bash' >> ~/.bash_profile && \
 FROM jenv-base as jenv-tagged
 ARG INSTALLED_TEMP
 ARG JENV_RELEASE
+RUN echo JENV_ROOT ==== ${JENV_ROOT} 
 RUN git clone --depth 1 --branch ${JENV_RELEASE} https://github.com/jenv/jenv.git ${JENV_ROOT} && \
     echo "JENV_RELEASE=${JENV_RELEASE}" >> ${INSTALLED_TEMP}
 
