@@ -35,6 +35,8 @@ ARG INSTALLED_TEMP="${DIRWORK}/.temp_version"
 
 ARG SDK_PACKAGES_LIST="${DIRWORK}/packages.txt"
 
+ARG PACKAGES_FILENAME="android-sdks.txt"
+
 
 #----------~~~~~~~~~~**********~~~~~~~~~~~-----------#
 #                PRELIMINARY STAGES
@@ -279,7 +281,7 @@ RUN echo "platform tools" && \
 FROM pre-minimal as stage1-independent-base
 ARG DIRWORK
 WORKDIR ${DIRWORK}
-ARG PACKAGES_FILENAME="android-sdks.txt"
+ARG PACKAGES_FILENAME
 
 FROM --platform=linux/amd64 stage1-independent-base as stage1-base
 RUN echo "emulator" && \
