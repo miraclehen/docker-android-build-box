@@ -296,6 +296,7 @@ FROM stage1-base as stage1-tagged
 COPY tagged_sdk_packages_list.txt $PACKAGES_FILENAME
 
 FROM stage1-base as stage1-last8
+ARG PACKAGES_FILENAME
 ARG LAST8_PACKAGES=$PACKAGES_FILENAME
 # Get last 8 platforms
 # Extract platform version numbers.
