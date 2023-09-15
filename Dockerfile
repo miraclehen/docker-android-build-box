@@ -407,6 +407,7 @@ RUN flutter config --no-analytics
 # ruby gems
 FROM pre-minimal as stage3
 ARG INSTALLED_TEMP
+ARG DIRWORK
 WORKDIR ${DIRWORK}
 COPY Gemfile /Gemfile
 
