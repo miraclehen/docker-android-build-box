@@ -163,6 +163,9 @@ RUN echo INSTALLED_VERSIONS ===== ${INSTALLED_VERSIONS}
 RUN echo '# Installed Versions of Specified Software' >> ${INSTALLED_VERSIONS}
 
 FROM base-base as base-tagged
+
+ARG ANDROID_SDK_TOOLS_VERSION
+
 RUN echo "sdk tools ${ANDROID_SDK_TOOLS_VERSION}" && \
     wget --quiet --output-document=sdk-tools.zip \
         "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_SDK_TOOLS_VERSION}_latest.zip" && \
