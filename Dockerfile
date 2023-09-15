@@ -30,6 +30,8 @@ ARG JENV_RELEASE="0.5.6"
 ARG DIRWORK="/tmp"
 ARG FINAL_DIRWORK="/project"
 
+ARG INSTALLED_VERSIONS="/root/installed-versions.txt"
+
 
 
 #----------~~~~~~~~~~**********~~~~~~~~~~~-----------#
@@ -51,7 +53,7 @@ ARG FLUTTER_VERSION
 ARG JENV_RELEASE
 
 ARG INSTALLED_TEMP="${DIRWORK}/.temp_version"
-ARG INSTALLED_VERSIONS="/root/installed-versions.txt"
+ARG INSTALLED_VERSIONS
 
 ARG SDK_PACKAGES_LIST="${DIRWORK}/packages.txt"
 
@@ -155,7 +157,7 @@ RUN apt-get update -qq > /dev/null && \
 # preliminary base-base stage
 # Install Android SDK CLI
 FROM pre-base as base-base
-ARG INSTALLED_VERSIONS="/root/installed-versions.txt"
+ARG INSTALLED_VERSIONS
 RUN echo INSTALLED_VERSIONS ===== ${INSTALLED_VERSIONS}
 
 RUN echo '# Installed Versions of Specified Software' >> ${INSTALLED_VERSIONS}
