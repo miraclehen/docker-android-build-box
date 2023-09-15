@@ -490,6 +490,9 @@ RUN apt-get install -qq nodejs > /dev/null && \
 # intended as a functional bare-bones installation
 FROM pre-minimal as minimal
 ARG INSTALLED_TEMP
+ARG INSTALLED_VERSIONS
+ARG DIRWORK
+ARG FINAL_DIRWORK
 COPY --from=stage2 /var/lib/jenkins/workspace /var/lib/jenkins/workspace
 COPY --from=stage2 /home/jenkins /home/jenkins
 COPY --from=jenv-final ${JENV_ROOT} ${JENV_ROOT}
@@ -511,6 +514,10 @@ WORKDIR ${FINAL_DIRWORK}
 #----------~~~~~~~~~~*****
 FROM node-final as complete
 ARG INSTALLED_TEMP
+ARG DIRWORK
+ARG INSTALLED_VERSIONS
+ARG FINAL_DIRWORK
+
 COPY --from=stage1-final --chmod=775 ${ANDROID_HOME} ${ANDROID_HOME}
 COPY --from=stage2 /var/lib/jenkins/workspace /var/lib/jenkins/workspace
 COPY --from=stage2 /home/jenkins /home/jenkins
