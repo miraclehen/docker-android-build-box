@@ -155,6 +155,8 @@ RUN apt-get update -qq > /dev/null && \
 # preliminary base-base stage
 # Install Android SDK CLI
 FROM pre-base as base-base
+ARG INSTALLED_VERSIONS
+
 RUN echo '# Installed Versions of Specified Software' >> ${INSTALLED_VERSIONS}
 
 FROM base-base as base-tagged
