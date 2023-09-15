@@ -37,15 +37,6 @@ ARG SDK_PACKAGES_LIST="${DIRWORK}/packages.txt"
 
 ARG PACKAGES_FILENAME="android-sdks.txt"
 
-ENV ANDROID_HOME="/opt/android-sdk" \
-    ANDROID_SDK_HOME="/opt/android-sdk" \
-    ANDROID_NDK="/opt/android-sdk/ndk/latest" \
-    ANDROID_NDK_ROOT="/opt/android-sdk/ndk/latest" \
-    FLUTTER_HOME="/opt/flutter" \
-    JENV_ROOT="/opt/jenv"
-    
-ENV ANDROID_SDK_MANAGER=${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager
-
 
 #----------~~~~~~~~~~**********~~~~~~~~~~~-----------#
 #                PRELIMINARY STAGES
@@ -69,6 +60,14 @@ ARG INSTALLED_TEMP
 ARG INSTALLED_VERSIONS
 
 ARG SDK_PACKAGES_LIST
+
+ENV ANDROID_HOME="/opt/android-sdk" \
+    ANDROID_SDK_HOME="/opt/android-sdk" \
+    ANDROID_NDK="/opt/android-sdk/ndk/latest" \
+    ANDROID_NDK_ROOT="/opt/android-sdk/ndk/latest" \
+    FLUTTER_HOME="/opt/flutter" \
+    JENV_ROOT="/opt/jenv"
+ENV ANDROID_SDK_MANAGER=${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager
 
 ENV TZ=America/Los_Angeles
 
@@ -254,6 +253,7 @@ RUN mkdir -p /var/lib/jenkins/workspace && \
 FROM base as pre-minimal
 ARG DEBUG
 ARG SDK_PACKAGES_LIST
+ARG ANDROID_SDK_MANAGER
 # The `yes` is for accepting all non-standard tool licenses.
 RUN mkdir --parents "$ANDROID_HOME/.android/" && \
     echo '### User Sources for Android SDK Manager' > \
@@ -360,15 +360,12 @@ WORKDIR ${DIRWORK}
 RUN echo "NDK"
 
 FROM ndk-base as ndk-tagged
-ARG NDK_VERSION
 RUN echo "Installing ${NDK_VERSION}" && \
     . /etc/jdk.env && \
     yes | $ANDROID_SDK_MANAGER ${DEBUG:+--verbose} "ndk;${NDK_VERSION}" > /dev/null && \
     ln -sv $ANDROID_HOME/ndk/${NDK_VERSION} ${ANDROID_NDK}
 
 FROM ndk-base as ndk-latest
-ARG SDK_PACKAGES_LIST
-ARG NDK_VERSION
 RUN NDK=$(grep 'ndk;' ${SDK_PACKAGES_LIST} | sort | tail -n1 | awk '{print $1}') && \
     NDK_VERSION=$(echo $NDK | awk -F\; '{print $2}') && \
     echo "Installing $NDK" && \
@@ -387,13 +384,10 @@ FROM --platform=linux/amd64 base as flutter-base
 ARG DIRWORK
 WORKDIR ${DIRWORK}
 FROM flutter-base as flutter-tagged
-ARG FLUTTER_VERSION
-ARG INSTALLED_TEMP
 RUN git clone --depth 1 --branch ${FLUTTER_VERSION} https://github.com/flutter/flutter.git ${FLUTTER_HOME} && \
     echo "FLUTTER_VERSION=${FLUTTER_VERSION}" >> ${INSTALLED_TEMP}
 
 FROM flutter-base as flutter-latest
-ARG INSTALLED_TEMP
 RUN git clone --depth 5 -b stable https://github.com/flutter/flutter.git ${FLUTTER_HOME} && \
     cd ${FLUTTER_HOME} && echo "FLUTTER_VERSION="$(git describe --tags HEAD) >> ${INSTALLED_TEMP}
 
@@ -405,8 +399,6 @@ RUN flutter config --no-analytics
 #----------~~~~~~~~~~*****
 # ruby gems
 FROM pre-minimal as stage3
-ARG DIRWORK
-ARG INSTALLED_TEMP
 WORKDIR ${DIRWORK}
 COPY Gemfile /Gemfile
 
@@ -435,15 +427,12 @@ RUN echo "nodejs, npm, cordova, ionic, react-native" && \
 
 # Install Node
 FROM node-base as node-tagged
-ARG NODE_VERSION
 RUN curl -sL -k https://deb.nodesource.com/setup_${NODE_VERSION} | bash - > /dev/null
 
 FROM node-base as node-latest
 RUN curl -sL -k https://deb.nodesource.com/setup_lts.x | bash - > /dev/null
 
 FROM node-${NODE_TAGGED} as node-final
-ARG NODE_VERSION
-ARG INSTALLED_TEMP
 RUN apt-get install -qq nodejs > /dev/null && \
     echo "node version: `node -v`" && \
     curl -sS -k https://dl.yarnpkg.com/debian/pubkey.gpg \
@@ -488,10 +477,6 @@ RUN apt-get install -qq nodejs > /dev/null && \
 #----------~~~~~~~~~~*****
 # intended as a functional bare-bones installation
 FROM pre-minimal as minimal
-ARG INSTALLED_TEMP
-ARG DIRWORK
-ARG INSTALLED_VERSIONS
-ARG FINAL_DIRWORK
 COPY --from=stage2 /var/lib/jenkins/workspace /var/lib/jenkins/workspace
 COPY --from=stage2 /home/jenkins /home/jenkins
 COPY --from=jenv-final ${JENV_ROOT} ${JENV_ROOT}
