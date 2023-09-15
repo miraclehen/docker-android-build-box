@@ -33,6 +33,8 @@ ARG FINAL_DIRWORK="/project"
 ARG INSTALLED_VERSIONS="/root/installed-versions.txt"
 ARG INSTALLED_TEMP="${DIRWORK}/.temp_version"
 
+ARG SDK_PACKAGES_LIST="${DIRWORK}/packages.txt"
+
 
 #----------~~~~~~~~~~**********~~~~~~~~~~~-----------#
 #                PRELIMINARY STAGES
@@ -55,7 +57,7 @@ ARG JENV_RELEASE
 ARG INSTALLED_TEMP
 ARG INSTALLED_VERSIONS
 
-ARG SDK_PACKAGES_LIST="${DIRWORK}/packages.txt"
+ARG SDK_PACKAGES_LIST
 
 ENV ANDROID_HOME="/opt/android-sdk" \
     ANDROID_SDK_HOME="/opt/android-sdk" \
@@ -248,6 +250,8 @@ RUN mkdir -p /var/lib/jenkins/workspace && \
 #----------~~~~~~~~~~*****
 FROM base as pre-minimal
 ARG DEBUG
+ARG SDK_PACKAGES_LIST
+ARG ANDROID_SDK_MANAGER
 # The `yes` is for accepting all non-standard tool licenses.
 RUN mkdir --parents "$ANDROID_HOME/.android/" && \
     echo '### User Sources for Android SDK Manager' > \
