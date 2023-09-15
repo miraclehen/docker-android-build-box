@@ -30,6 +30,8 @@ ARG JENV_RELEASE="0.5.6"
 ARG DIRWORK="/tmp"
 ARG FINAL_DIRWORK="/project"
 
+
+
 #----------~~~~~~~~~~**********~~~~~~~~~~~-----------#
 #                PRELIMINARY STAGES
 #----------~~~~~~~~~~**********~~~~~~~~~~~-----------#
@@ -80,6 +82,9 @@ ENV PATH="${JENV_ROOT}/shims:${JENV_ROOT}/bin:$JAVA_HOME/bin:$PATH:$ANDROID_SDK_
 FROM ubuntu as pre-base
 ARG TERM=dumb \
     DEBIAN_FRONTEND=noninteractive
+
+ARG DIRWORK
+ARG FINAL_DIRWORK
 
 WORKDIR ${DIRWORK}
 
