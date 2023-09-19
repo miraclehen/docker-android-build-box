@@ -15,15 +15,6 @@ ARG ANDROID_SDKS="last8"
 ARG NDK_TAGGED="latest"
 ARG NDK_VERSION="25.2.9519653"
 
-ARG NODE_TAGGED="latest"
-ARG NODE_VERSION="18.x"
-
-ARG BUNDLETOOL_TAGGED="latest"
-ARG BUNDLETOOL_VERSION="1.14.0"
-
-ARG FLUTTER_TAGGED="latest"
-ARG FLUTTER_VERSION="3.7.7"
-
 ARG JENV_TAGGED="latest"
 ARG JENV_RELEASE="0.5.6"
 
@@ -51,9 +42,6 @@ FROM ubuntu:20.04 as ubuntu
 # Ensure ARGs are in this build context
 ARG ANDROID_SDK_TOOLS_VERSION
 ARG NDK_VERSION
-ARG NODE_VERSION
-ARG BUNDLETOOL_VERSION
-ARG FLUTTER_VERSION
 ARG JENV_RELEASE
 
 ARG INSTALLED_TEMP
@@ -65,7 +53,6 @@ ENV ANDROID_HOME="/opt/android-sdk" \
     ANDROID_SDK_HOME="/opt/android-sdk" \
     ANDROID_NDK="/opt/android-sdk/ndk/latest" \
     ANDROID_NDK_ROOT="/opt/android-sdk/ndk/latest" \
-    FLUTTER_HOME="/opt/flutter" \
     JENV_ROOT="/opt/jenv"
 ENV ANDROID_SDK_MANAGER=${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager
 
@@ -80,7 +67,7 @@ ENV LANG="en_US.UTF-8" \
 ENV ANDROID_SDK_HOME="$ANDROID_HOME"
 ENV ANDROID_NDK_HOME="$ANDROID_NDK"
 
-ENV PATH="${JENV_ROOT}/shims:${JENV_ROOT}/bin:$JAVA_HOME/bin:$PATH:$ANDROID_SDK_HOME/emulator:$ANDROID_SDK_HOME/cmdline-tools/latest/bin:$ANDROID_SDK_HOME/tools:$ANDROID_SDK_HOME/platform-tools:$ANDROID_NDK:$FLUTTER_HOME/bin:$FLUTTER_HOME/bin/cache/dart-sdk/bin"
+ENV PATH="${JENV_ROOT}/shims:${JENV_ROOT}/bin:$JAVA_HOME/bin:$PATH:$ANDROID_SDK_HOME/emulator:$ANDROID_SDK_HOME/cmdline-tools/latest/bin:$ANDROID_SDK_HOME/tools:$ANDROID_SDK_HOME/platform-tools:$ANDROID_NDK"
 
 #----------~~~~~~~~~~*****
 # build stage: base
@@ -323,33 +310,6 @@ RUN echo "installing: $(cat $PACKAGES_FILENAME)" && \
     yes | ${ANDROID_SDK_MANAGER} ${DEBUG:+--verbose} --package_file=$PACKAGES_FILENAME > /dev/null
 
 #----------~~~~~~~~~~*****
-# build stage: bundletool-final
-#----------~~~~~~~~~~*****
-# bundletool
-FROM pre-minimal as bundletool-base
-ARG DIRWORK
-WORKDIR ${DIRWORK}
-RUN echo "bundletool"
-
-FROM bundletool-base as bundletool-tagged
-ARG BUNDLETOOL_VERSION
-ARG INSTALLED_TEMP
-RUN wget -q https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar -O $ANDROID_SDK_HOME/cmdline-tools/latest/bundletool.jar && \
-    echo "BUNDLETOOL_VERSION=${BUNDLETOOL_VERSION}" >> ${INSTALLED_TEMP}
-
-FROM bundletool-base as bundletool-latest
-ARG INSTALLED_TEMP
-ARG NODE_VERSION
-ARG BUNDLETOOL_VERSION
-RUN TEMP=$(curl -s https://api.github.com/repos/google/bundletool/releases/latest) && \
-    echo "$TEMP" | grep "browser_download_url.*jar" | cut -d : -f 2,3 | tr -d \" | wget -O $ANDROID_SDK_HOME/cmdline-tools/latest/bundletool.jar -qi - && \
-    TAG_NAME=$(echo "$TEMP" | grep "tag_name" | cut -d : -f 2,3 | tr -d \"\ ,) && \
-    echo "BUNDLETOOL_VERSION=$TAG_NAME" >> ${INSTALLED_TEMP}
-
-FROM bundletool-${BUNDLETOOL_TAGGED} as bundletool-final
-RUN echo "bundletool finished"
-
-#----------~~~~~~~~~~*****
 # build stage: ndk-final
 #----------~~~~~~~~~~*****
 # NDK (side-by-side)
@@ -377,105 +337,6 @@ RUN NDK=$(grep 'ndk;' ${SDK_PACKAGES_LIST} | sort | tail -n1 | awk '{print $1}')
 
 FROM ndk-${NDK_TAGGED} as ndk-final
 RUN echo "NDK finished"
-
-#----------~~~~~~~~~~*****
-# build stage: flutter-final
-#----------~~~~~~~~~~*****
-# Flutter
-FROM --platform=linux/amd64 base as flutter-base
-ARG DIRWORK
-WORKDIR ${DIRWORK}
-FROM flutter-base as flutter-tagged
-ARG FLUTTER_VERSION
-ARG INSTALLED_TEMP
-RUN git clone --depth 1 --branch ${FLUTTER_VERSION} https://github.com/flutter/flutter.git ${FLUTTER_HOME} && \
-    echo "FLUTTER_VERSION=${FLUTTER_VERSION}" >> ${INSTALLED_TEMP}
-
-FROM flutter-base as flutter-latest
-ARG INSTALLED_TEMP
-RUN git clone --depth 5 -b stable https://github.com/flutter/flutter.git ${FLUTTER_HOME} && \
-    cd ${FLUTTER_HOME} && echo "FLUTTER_VERSION="$(git describe --tags HEAD) >> ${INSTALLED_TEMP}
-
-FROM flutter-${FLUTTER_TAGGED} as flutter-final
-RUN flutter config --no-analytics
-
-#----------~~~~~~~~~~*****
-# build stage: stage3
-#----------~~~~~~~~~~*****
-# ruby gems
-FROM pre-minimal as stage3
-ARG INSTALLED_TEMP
-ARG DIRWORK
-WORKDIR ${DIRWORK}
-COPY Gemfile /Gemfile
-
-RUN echo "fastlane" && \
-    cd / && \
-    gem install bundler --quiet --no-document > /dev/null && \
-    mkdir -p /.fastlane && \
-    chmod 777 /.fastlane && \
-    bundle install --quiet && \
-    TEMP=$(bundler exec fastlane --version) && \
-    BUNDLER_VERSION=$(bundler --version | cut -d ' ' -f 3) && \
-    RAKE_VERSION=$(bundler exec rake --version | cut -d ' ' -f 3) && \
-    FASTLANE_VERSION=$(echo "$TEMP" | grep fastlane | tail -n 1 | tr -d 'fastlane\ ') && \
-    echo "BUNDLER_VERSION=$BUNDLER_VERSION" >> ${INSTALLED_TEMP} && \
-    echo "RAKE_VERSION=$RAKE_VERSION" >> ${INSTALLED_TEMP} && \
-    echo "FASTLANE_VERSION=$FASTLANE_VERSION" >> ${INSTALLED_TEMP}
-
-#----------~~~~~~~~~~*****
-# build stage: node-final
-#----------~~~~~~~~~~*****
-# node
-FROM stage3 as node-base
-ENV NODE_ENV=production
-RUN echo "nodejs, npm, cordova, ionic, react-native" && \
-    echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-
-# Install Node
-FROM node-base as node-tagged
-ARG NODE_VERSION
-RUN curl -sL -k https://deb.nodesource.com/setup_${NODE_VERSION} | bash - > /dev/null
-
-FROM node-base as node-latest
-RUN curl -sL -k https://deb.nodesource.com/setup_lts.x | bash - > /dev/null
-
-FROM node-${NODE_TAGGED} as node-final
-ARG NODE_VERSION
-ARG INSTALLED_TEMP
-RUN echo node-${NODE_TAGGED}
-RUN apt-get install -qq nodejs > /dev/null && \
-    echo "node version: `node -v`" && \
-    curl -sS -k https://dl.yarnpkg.com/debian/pubkey.gpg \
-        | apt-key add - > /dev/null && \
-    echo "deb https://dl.yarnpkg.com/debian/ stable main" \
-        | tee /etc/apt/sources.list.d/yarn.list > /dev/null && \
-    apt-get update -qq > /dev/null && \
-    apt-get install -qq yarn > /dev/null && \
-    rm -rf /var/lib/apt/lists/ && \
-    npm install --quiet -g npm > /dev/null && \
-    echo "npm version: `npm -v`" && \
-    npm install --quiet -g \
-        bower \
-        cordova \
-        eslint \
-        gulp-cli \
-        @ionic/cli \
-        jshint \
-        karma-cli \
-        mocha \
-        node-gyp \
-        npm-check-updates \
-        @react-native-community/cli > /dev/null && \
-    npm cache clean --force > /dev/null && \
-    apt-get -y clean && apt-get -y autoremove && rm -rf /var/lib/apt/lists/* && \
-    echo 'debconf debconf/frontend select Dialog' | debconf-set-selections && \
-    NODE_VERSION=$(node --version) && \
-    YARN_VERSION=$(yarn --version) && \
-    echo "NODE_VERSION=$NODE_VERSION" >> ${INSTALLED_TEMP} && \
-    echo "YARN_VERSION=$YARN_VERSION" >> ${INSTALLED_TEMP} && \
-    echo "Globally Installed NPM Packages:" >> ${INSTALLED_TEMP} && \
-    echo "$(npm list -g)" >> ${INSTALLED_TEMP}
 
 #----------~~~~~~~~~~**********~~~~~~~~~~~-----------#
 #                FINAL BUILD TARGETS
@@ -520,12 +381,10 @@ ARG FINAL_DIRWORK
 COPY --from=stage1-final --chmod=775 ${ANDROID_HOME} ${ANDROID_HOME}
 COPY --from=stage2 /var/lib/jenkins/workspace /var/lib/jenkins/workspace
 COPY --from=stage2 /home/jenkins /home/jenkins
-COPY --from=bundletool-final $ANDROID_SDK_HOME/cmdline-tools/latest/bundletool.jar $ANDROID_SDK_HOME/cmdline-tools/latest/bundletool.jar
 COPY --from=ndk-final --chmod=775 ${ANDROID_NDK_ROOT}/../ ${ANDROID_NDK_ROOT}/../
 COPY --from=jenv-final ${JENV_ROOT} ${JENV_ROOT}
 COPY --from=jenv-final /root/.bash_profile /root/.bash_profile
 
-COPY --from=bundletool-final ${INSTALLED_TEMP} ${DIRWORK}/.bundletool_version
 COPY --from=jenv-final ${INSTALLED_TEMP} ${DIRWORK}/.jenv_version
 
 COPY README.md /README.md
@@ -543,22 +402,6 @@ RUN chmod 775 $ANDROID_HOME $ANDROID_NDK_ROOT/../ && \
     du -sh $ANDROID_HOME
 
 WORKDIR ${FINAL_DIRWORK}
-
-#----------~~~~~~~~~~*****
-# build target: complete-flutter
-#----------~~~~~~~~~~*****
-FROM --platform=linux/amd64 complete as complete-flutter
-ARG INSTALLED_TEMP
-ARG INSTALLED_VERSIONS
-ARG DIRWORK
-COPY --from=flutter-final ${FLUTTER_HOME} ${FLUTTER_HOME}
-COPY --from=flutter-final /root/.flutter /root/.flutter
-COPY --from=flutter-final /root/.config/flutter /root/.config/flutter
-COPY --from=flutter-final ${INSTALLED_TEMP} ${DIRWORK}/.flutter_version
-
-RUN git config --global --add safe.directory ${FLUTTER_HOME} && \
-    cat ${DIRWORK}/.flutter_version >> ${INSTALLED_VERSIONS} && \
-    rm -rf ${DIRWORK}/*
 
 # labels, see http://label-schema.org/
 LABEL maintainer="Ming Chen"
