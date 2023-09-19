@@ -91,7 +91,6 @@ ARG TERM=dumb \
 
 ARG DIRWORK
 ARG FINAL_DIRWORK
-RUN echo DIRWORK ==== ${DIRWORK}
 
 WORKDIR ${DIRWORK}
 
@@ -162,14 +161,12 @@ RUN apt-get update -qq > /dev/null && \
 # Install Android SDK CLI
 FROM pre-base as base-base
 ARG INSTALLED_VERSIONS
-RUN echo INSTALLED_VERSIONS ===== ${INSTALLED_VERSIONS}
 
 RUN echo '# Installed Versions of Specified Software' >> ${INSTALLED_VERSIONS}
 
 FROM base-base as base-tagged
 
 ARG ANDROID_SDK_TOOLS_VERSION
-ARG INSTALLED_VERSIONS
 
 RUN echo "sdk tools ${ANDROID_SDK_TOOLS_VERSION}" && \
     wget --quiet --output-document=sdk-tools.zip \
@@ -445,6 +442,7 @@ RUN curl -sL -k https://deb.nodesource.com/setup_lts.x | bash - > /dev/null
 FROM node-${NODE_TAGGED} as node-final
 ARG NODE_VERSION
 ARG INSTALLED_TEMP
+RUN echo node-${NODE_TAGGED}
 RUN apt-get install -qq nodejs > /dev/null && \
     echo "node version: `node -v`" && \
     curl -sS -k https://dl.yarnpkg.com/debian/pubkey.gpg \
